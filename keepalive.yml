@@ -1,0 +1,30 @@
+name: Auto Keepalive
+
+on:
+  schedule:
+    # 每 45 天自动执行一次（保活在 60 天限制内）
+    - cron: '0 0 */45 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update keepalive timestamp
+        run: |
+          echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > .keepalive
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .keepalive
+          git diff --staged --quiet || git commit -m "chore: keepalive $(date -u '+%Y-%m-%d')"
+          git push
